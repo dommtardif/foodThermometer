@@ -1,4 +1,6 @@
 //Feel free to use this source code as you wish.
+//Dom Tardif
+//
 //The beep() and playAlarm() functions come from a blog post from
 //Erik Kringen (https://mycontraption.com/sound-effects-with-and-arduino/)
 
