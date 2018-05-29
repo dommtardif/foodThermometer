@@ -17,6 +17,7 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 #include "notes.h"
+#include "definitions.h"
 
 //Screen Setup - modify to needs 128x64 is assumed in display routines
 U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
@@ -36,27 +37,6 @@ U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
 #define P_CLK 10
 //END PINS setup
 
-//Fonts
-#define DEF_FONT u8g2_font_7x13_t_symbols
-#define SMALL_FONT u8g2_font_profont10_tr
-#define SMLINE_HEIGHT 8
-#define LINE_HEIGHT 11
-
-//Operation mode
-#define DEFAULT_MODE 0
-#define CANDY_MODE 1
-#define BEEF_MODE 2
-#define PORC_MODE 3
-#define POULTRY_MODE 4
-#define ALARM_MODE 5
-#define CALIB_MODE 6
-
-//Cooking stage description
-typedef struct {
-  char description [25];
-  int temp;
-} descriptionType;
-
 Adafruit_MAX31865 max3 = Adafruit_MAX31865(P_CS, P_SDI, P_SDO, P_CLK);
 
 //MAX31865 reference values
@@ -67,39 +47,6 @@ int prevTemp;
 byte tmode = DEFAULT_MODE;
 int alarmTemp = 0;
 byte alarmState = 0;
-
-const static descriptionType PROGMEM candyStages[11]  = {{"Confiserie-Candy making", -5000},
-  {"Petit filet/Soft thread", 10500},
-  {"Grand filet/Thread", 10700},
-  {"Petit boule/Soft ball", 11200},
-  {"Grand boule/Firm ball", 11800},
-  {"Boule/Hard ball", 12500},
-  {"Petit casse/Soft crack", 13500},
-  {"Grand casse/Hard crack", 14500},
-  {"Caramel", 15000},
-  {"Sucre brule/Burnt sugar", 17100},
-  {"", 30000}
-};
-
-const static descriptionType PROGMEM beefStages[5]  = {{"Boeuf/Agneau-Beef/Lamb", -5000},
-  {"Saignant/Rare", 6000},
-  {"A point/Medium", 7000},
-  {"Bien cuit/Well done", 7500},
-  {"", 30000}
-};
-
-const static descriptionType PROGMEM porcStages[4]  = {{"Porc", -5000},
-  {"Fume/Smoked", 6000},
-  {"Frais/Fresh", 7500},
-  {"", 30000}
-};
-
-const static descriptionType PROGMEM poultryStages[5]  = {{"Volaille-Poultry", -5000},
-  {"Poulet/Chicken min", 8000},
-  {"Poulet/Chicken max", 8500},
-  {"Canard/Duck", 9000},
-  {"", 30000}
-};
 
 void setup(void) {
   EEPROM.begin();
@@ -259,9 +206,7 @@ void setAlarmTemp() {
       u8g2.print(F("Alarme a:"));
       u8g2.setCursor(0, 2 * LINE_HEIGHT);
       u8g2.print(F("Alarm at:"));
-
       u8g2.setCursor(0, 3 * LINE_HEIGHT);
-
       u8g2.print(alarmTemp);
       u8g2.print(F("℃ / "));
       u8g2.print((int)(alarmTemp * 1.8 + 32));
@@ -278,10 +223,10 @@ void setAlarmTemp() {
       alarmTemp += (1 + (int)(loopcount / 4)) ;
       delay((int)(delaylength / (2 * loopcount)));
       substart = millis();
-    } else if (digitalRead(P_MENU) == LOW){
+    } else if (digitalRead(P_MENU) == LOW) {
       alarmState = 1;
       break;
-    } else if (digitalRead(P_CANCEL) == LOW){
+    } else if (digitalRead(P_CANCEL) == LOW) {
       alarmState = 0;
       if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Mise a zero?", "Reset to zero?", " Oui/Yes \n Non/No ") == 1) alarmTemp = 0;
       break;
@@ -370,7 +315,7 @@ void loop(void) {
     else if (tmode == CALIB_MODE) calibMode(2 * LINE_HEIGHT + 1);
   } while ( u8g2.nextPage() );
 
-  
+
   checkAlarm(currentTemp, currentDelta);
 
   //Wait for and react to user input
