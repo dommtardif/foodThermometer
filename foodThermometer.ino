@@ -71,28 +71,26 @@ boolean checkForFaults() {
     do {
       u8g2.setFont(SMALL_FONT);
       u8g2.setCursor(0, SMLINE_HEIGHT);
-      u8g2.print(F("Erreur/Fault"));
-      u8g2.setCursor(0, 2 * SMLINE_HEIGHT);
+      u8g2.println(F("Erreur/Fault"));
       u8g2.print(F("# 0x"));
-      u8g2.print(fault, HEX);
-      u8g2.setCursor(0, 3 * SMLINE_HEIGHT);
+      u8g2.println(fault, HEX);
       if (fault & MAX31865_FAULT_HIGHTHRESH) {
-        u8g2.print(F("RTD High Threshold"));
+        u8g2.println(F("RTD High Threshold"));
       }
       if (fault & MAX31865_FAULT_LOWTHRESH) {
-        u8g2.print(F("RTD Low Threshold"));
+        u8g2.println(F("RTD Low Threshold"));
       }
       if (fault & MAX31865_FAULT_REFINLOW) {
-        u8g2.print(F("REFIN- > 0.85 x Bias"));
+        u8g2.println(F("REFIN- > 0.85 x Bias"));
       }
       if (fault & MAX31865_FAULT_REFINHIGH) {
-        u8g2.print(F("REFIN- < 0.85 x Bias - FORCE- open"));
+        u8g2.println(F("REFIN- < 0.85 x Bias - FORCE- open"));
       }
       if (fault & MAX31865_FAULT_RTDINLOW) {
-        u8g2.print(F("RTDIN- < 0.85 x Bias - FORCE- open"));
+        u8g2.println(F("RTDIN- < 0.85 x Bias - FORCE- open"));
       }
       if (fault & MAX31865_FAULT_OVUV) {
-        u8g2.print(F("Under/Over voltage"));
+        u8g2.println(F("Under/Over voltage"));
       }
     } while ( u8g2.nextPage() );
     max3.clearFault();
@@ -134,15 +132,12 @@ void printStage(int currentTemp, int currentDelta, byte pos) {
 
   u8g2.setFont(SMALL_FONT);
   u8g2.setCursor(0, pos + SMLINE_HEIGHT);
-  u8g2.print(currentStage.description);
+  u8g2.println(currentStage.description);
   if (timeUntil != -1) {
-    u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
     u8g2.print(timeUntil);
-    u8g2.print(F(" s avant/until"));
+    u8g2.println(F(" s avant/until"));
   }
-  u8g2.setCursor(0, pos + 3 * SMLINE_HEIGHT);
-  u8g2.print(F("Prochain stade/Next stage"));
-  u8g2.setCursor(0, pos + 4 * SMLINE_HEIGHT);
+  u8g2.println(F("Prochain stade/Next stage"));
   u8g2.print(nextStage.description);
 }
 
@@ -154,16 +149,14 @@ void alarmMode(int currentTemp, int currentDelta, byte pos) {
     int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
     if (timeUntil != -1) {
       u8g2.print(timeUntil);
-      u8g2.print(F(" s avant/until"));
+      u8g2.println(F(" s avant/until"));
     }
   }
-  u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
   u8g2.print(F("alarme/alarm:"));
   u8g2.print(alarmTemp);
   u8g2.print(F("℃ / "));
   u8g2.print((int)(alarmTemp * 1.8 + 32));
-  u8g2.print(F("℉"));
-  u8g2.setCursor(0, pos + 3 * SMLINE_HEIGHT);
+  u8g2.println(F("℉"));
   if (alarmState != 0) u8g2.print(F("Actif/Active"));
   else u8g2.print(F("Inactif/Inactive"));
 }
@@ -171,8 +164,7 @@ void alarmMode(int currentTemp, int currentDelta, byte pos) {
 void calibMode(byte pos) {
   u8g2.setFont(SMALL_FONT);
   u8g2.setCursor(0, pos + SMLINE_HEIGHT);
-  u8g2.print(F("Calibration"));
-  u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
+  u8g2.println(F("Calibration"));
   u8g2.print(F("Res.nom.:"));
   u8g2.print(rNominal);
 }
@@ -203,10 +195,8 @@ void setAlarmTemp() {
 
       u8g2.setFont(DEF_FONT);
       u8g2.setCursor(0, LINE_HEIGHT);
-      u8g2.print(F("Alarme a:"));
-      u8g2.setCursor(0, 2 * LINE_HEIGHT);
-      u8g2.print(F("Alarm at:"));
-      u8g2.setCursor(0, 3 * LINE_HEIGHT);
+      u8g2.println(F("Alarme a:"));
+      u8g2.println(F("Alarm at:"));
       u8g2.print(alarmTemp);
       u8g2.print(F("℃ / "));
       u8g2.print((int)(alarmTemp * 1.8 + 32));
@@ -300,12 +290,13 @@ void loop(void) {
     u8g2.setCursor(0, LINE_HEIGHT);
     u8g2.print((float)currentTemp / 100.0);
     u8g2.print(F("℃ △"));
-    u8g2.print((float)currentDelta / 100.0);
+    u8g2.println((float)currentDelta / 100.0);
     if (alarmState != 0) {
       u8g2.setCursor(127 - u8g2.getStrWidth("◉"), LINE_HEIGHT);
       u8g2.print("◉");
+          u8g2.setCursor(0, 2 * LINE_HEIGHT);
+
     }
-    u8g2.setCursor(0, 2 * LINE_HEIGHT);
     u8g2.print((float)currentTemp / 100.0 * 1.8 + 32.0);
     u8g2.print(F("℉ △"));
     u8g2.print((float)currentDelta / 100.0 * 1.8);
