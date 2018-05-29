@@ -57,12 +57,6 @@ typedef struct {
   int temp;
 } descriptionType;
 
-//UI strings intl
-typedef struct {
-  char fr[25];
-  char en[25];
-} uiString;
-
 Adafruit_MAX31865 max3 = Adafruit_MAX31865(P_CS, P_SDI, P_SDO, P_CLK);
 
 //MAX31865 reference values
