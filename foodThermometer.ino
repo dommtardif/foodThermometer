@@ -1,4 +1,4 @@
-//Feel free to use this source code as you wish.
+//Please leave the following reference to Erik Kringen blog post unless you remove his code.
 //Dom Tardif
 //
 //The beep() and playAlarm() functions come from a blog post from
@@ -7,7 +7,7 @@
 //Button 1 Previous - Button 3 Next : Changes the value on screen (alarm and calibration mode)
 //Button 2 Menu : Changes thermometer modes
 //Button 4 Cancel: On default mode without alarm, goes into calibration mode. In any mode, with an alarm, cancels the alarm
-
+//
 //Check and modify the screen and pins setup below and change according to your needs.
 //Works as is on Arduino Leonardo
 
@@ -57,6 +57,12 @@ typedef struct {
   int temp;
 } descriptionType;
 
+//UI strings intl
+typedef struct {
+  char fr[25];
+  char en[25];
+} uiString;
+
 Adafruit_MAX31865 max3 = Adafruit_MAX31865(P_CS, P_SDI, P_SDO, P_CLK);
 
 //MAX31865 reference values
@@ -104,6 +110,8 @@ const static descriptionType PROGMEM poultryStages[5]  = {{"Volaille-Poultry", -
 void setup(void) {
   EEPROM.begin();
   if (EEPROM.read(0) == 128) rNominal = (float)EEPROM.read(1) + ((float)EEPROM.read(2) / 100);
+  if (EEPROM.read(3) == 128) alarmTemp = (EEPROM.read(4) * 100) + EEPROM.read(5);
+
   pinMode(P_MENU, INPUT_PULLUP);
   pinMode(P_NEXT, INPUT_PULLUP);
   pinMode(P_PREV, INPUT_PULLUP);
@@ -199,27 +207,24 @@ void printStage(int currentTemp, int currentDelta, byte pos) {
 
 
 void alarmMode(int currentTemp, int currentDelta, byte pos) {
-  int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
   u8g2.setFont(SMALL_FONT);
   u8g2.setCursor(0, pos + SMLINE_HEIGHT);
-  if (alarmState == 0) {
-    u8g2.print(F("Alarme/Alarm"));
-  }
-  else {
+  if (alarmState != 0) {
+    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
     if (timeUntil != -1) {
       u8g2.print(timeUntil);
       u8g2.print(F(" s avant/until"));
     }
-    u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
-    u8g2.print(F("alarme/alarm:"));
-    u8g2.print(alarmTemp);
-    u8g2.print(F("℃ / "));
-    u8g2.print((int)(alarmTemp * 1.8 + 32));
-    u8g2.print(F("℉"));
   }
+  u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
+  u8g2.print(F("alarme/alarm:"));
+  u8g2.print(alarmTemp);
+  u8g2.print(F("℃ / "));
+  u8g2.print((int)(alarmTemp * 1.8 + 32));
+  u8g2.print(F("℉"));
   u8g2.setCursor(0, pos + 3 * SMLINE_HEIGHT);
-  if (alarmState != 0) u8g2.print("Alarme actif/Alarm active");
-
+  if (alarmState != 0) u8g2.print(F("Actif/Active"));
+  else u8g2.print(F("Inactif/Inactive"));
 }
 
 void calibMode(byte pos) {
@@ -231,18 +236,14 @@ void calibMode(byte pos) {
   u8g2.print(rNominal);
 }
 
-void saverNominal() {
+void saveToEEPROM(int pos, int value) {
   byte high, low;
-  high = (int)(rNominal);
-  low = (int)((rNominal - high ) * 100);
-  if (EEPROM.read(1) != high || EEPROM.read(2) != low) {
-    if ( u8g2.userInterfaceMessage("Calibration", "Enregistrer?", "Save?", " Oui/Yes \n Non/No ") == 1) {
-      if (EEPROM.read(0) != 128) EEPROM.write(0, 128);
-      if (EEPROM.read(1) != high) EEPROM.write(1, high);
-      if (EEPROM.read(2) != low) EEPROM.write(2, low);
-    }
-    else rNominal = (float)EEPROM.read(1) + ((float)EEPROM.read(2) / 100);
-  }
+  high = (int)(value / 100);
+  low = value - (high * 100 );
+  if (EEPROM.read(pos) != 128) EEPROM.write(pos, 128);
+  if (EEPROM.read(pos + 1) != high) EEPROM.write(pos + 1, high);
+  if (EEPROM.read(pos + 2) != low) EEPROM.write(pos + 2, low);
+
 }
 
 void setAlarmTemp() {
@@ -261,13 +262,17 @@ void setAlarmTemp() {
 
       u8g2.setFont(DEF_FONT);
       u8g2.setCursor(0, LINE_HEIGHT);
-      u8g2.print(F("Alarme pour/Alarm for"));
+      u8g2.print(F("Alarme a:"));
       u8g2.setCursor(0, 2 * LINE_HEIGHT);
+      u8g2.print(F("Alarm at:"));
+
+      u8g2.setCursor(0, 3 * LINE_HEIGHT);
+
       u8g2.print(alarmTemp);
       u8g2.print(F("℃ / "));
       u8g2.print((int)(alarmTemp * 1.8 + 32));
       u8g2.print(F("℉"));
-      u8g2.drawHLine(0, 2 * LINE_HEIGHT + 1, 128);
+      u8g2.drawHLine(0, 3 * LINE_HEIGHT + 1, 128);
 
     } while ( u8g2.nextPage() );
 
@@ -279,13 +284,20 @@ void setAlarmTemp() {
       alarmTemp += (1 + (int)(loopcount / 4)) ;
       delay((int)(delaylength / (2 * loopcount)));
       substart = millis();
+    } else if (digitalRead(P_MENU) == LOW){
+      alarmState = 1;
+      break;
+    } else if (digitalRead(P_CANCEL) == LOW){
+      alarmState = 0;
+      if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Mise a zero?", "Reset to zero?", " Oui/Yes \n Non/No ") == 1) alarmTemp = 0;
+      break;
     }
 
     if (loopcount < 20) loopcount++;
     subend = millis();
-    if (alarmTemp != 0) alarmState = 1;
-    else alarmState = 0;
+    alarmState = 1;
   }
+  if (looping) saveToEEPROM(3, alarmTemp);
 
 }
 
@@ -303,40 +315,36 @@ void checkAlarm(int currentTemp, int currentDelta) {
 }
 
 void beep (int speakerPin, float noteFrequency, long noteDuration)
-{    
+{
   int x;
-  // Convert the frequency to microseconds
-  float microsecondsPerWave = 1000000/noteFrequency;
-  // Calculate how many HIGH/LOW cycles there are per millisecond
-  float millisecondsPerCycle = 1000/(microsecondsPerWave * 2);
-  // Multiply noteDuration * number or cycles per millisecond
+  float microsecondsPerWave = 1000000 / noteFrequency;
+  float millisecondsPerCycle = 1000 / (microsecondsPerWave * 2);
   float loopTime = noteDuration * millisecondsPerCycle;
-  // Play the note for the calculated loopTime.
-  for (x=0;x<loopTime;x++)   
-          {   
-              digitalWrite(speakerPin,HIGH); 
-              delayMicroseconds(microsecondsPerWave); 
-              digitalWrite(speakerPin,LOW); 
-              delayMicroseconds(microsecondsPerWave); 
-          } 
-} 
+  for (x = 0; x < loopTime; x++)
+  {
+    digitalWrite(speakerPin, HIGH);
+    delayMicroseconds(microsecondsPerWave);
+    digitalWrite(speakerPin, LOW);
+    delayMicroseconds(microsecondsPerWave);
+  }
+}
 void playAlarm() {
-          beep(P_SPEAKER, note_A7,100); //A 
-          beep(P_SPEAKER, note_G7,100); //G 
-          beep(P_SPEAKER, note_E7,100); //E 
-          beep(P_SPEAKER, note_C7,100); //C
-          beep(P_SPEAKER, note_D7,100); //D 
-          beep(P_SPEAKER, note_B7,100); //B 
-          beep(P_SPEAKER, note_F7,100); //F 
-          beep(P_SPEAKER, note_C8,100); //C 
-          beep(P_SPEAKER, note_A7,100); //A 
-          beep(P_SPEAKER, note_G7,100); //G 
-          beep(P_SPEAKER, note_E7,100); //E 
-          beep(P_SPEAKER, note_C7,100); //C
-          beep(P_SPEAKER, note_D7,100); //D 
-          beep(P_SPEAKER, note_B7,100); //B 
-          beep(P_SPEAKER, note_F7,100); //F 
-          beep(P_SPEAKER, note_C8,100); //C 
+  beep(P_SPEAKER, note_A7, 100); //A
+  beep(P_SPEAKER, note_G7, 100); //G
+  beep(P_SPEAKER, note_E7, 100); //E
+  beep(P_SPEAKER, note_C7, 100); //C
+  beep(P_SPEAKER, note_D7, 100); //D
+  beep(P_SPEAKER, note_B7, 100); //B
+  beep(P_SPEAKER, note_F7, 100); //F
+  beep(P_SPEAKER, note_C8, 100); //C
+  beep(P_SPEAKER, note_A7, 100); //A
+  beep(P_SPEAKER, note_G7, 100); //G
+  beep(P_SPEAKER, note_E7, 100); //E
+  beep(P_SPEAKER, note_C7, 100); //C
+  beep(P_SPEAKER, note_D7, 100); //D
+  beep(P_SPEAKER, note_B7, 100); //B
+  beep(P_SPEAKER, note_F7, 100); //F
+  beep(P_SPEAKER, note_C8, 100); //C
 }
 
 void loop(void) {
@@ -346,12 +354,13 @@ void loop(void) {
 
   prevTemp = currentTemp;
 
+  //Show current temperature and mode-specific displays
   u8g2.firstPage();
   do {
     u8g2.setFont(DEF_FONT);
     u8g2.setCursor(0, LINE_HEIGHT);
     u8g2.print((float)currentTemp / 100.0);
-    u8g2.print("℃ △");
+    u8g2.print(F("℃ △"));
     u8g2.print((float)currentDelta / 100.0);
     if (alarmState != 0) {
       u8g2.setCursor(127 - u8g2.getStrWidth("◉"), LINE_HEIGHT);
@@ -359,15 +368,18 @@ void loop(void) {
     }
     u8g2.setCursor(0, 2 * LINE_HEIGHT);
     u8g2.print((float)currentTemp / 100.0 * 1.8 + 32.0);
-    u8g2.print("℉ △");
+    u8g2.print(F("℉ △"));
     u8g2.print((float)currentDelta / 100.0 * 1.8);
     u8g2.drawHLine(0, 2 * LINE_HEIGHT + 1, 128);
     if (tmode >= CANDY_MODE && tmode <= POULTRY_MODE) printStage(currentTemp, currentDelta, 2 * LINE_HEIGHT + 1);
     else if (tmode == ALARM_MODE) alarmMode(currentTemp, currentDelta, 2 * LINE_HEIGHT + 1);
     else if (tmode == CALIB_MODE) calibMode(2 * LINE_HEIGHT + 1);
   } while ( u8g2.nextPage() );
+
+  
   checkAlarm(currentTemp, currentDelta);
 
+  //Wait for and react to user input
   int starttime = millis();
   int endtime = starttime;
   while ((endtime - starttime) <= 1000)
@@ -377,7 +389,8 @@ void loop(void) {
     if (event != 0) {
       if (event == U8X8_MSG_GPIO_MENU_SELECT) {
         if (tmode == CALIB_MODE) {
-          saverNominal();
+          if ( u8g2.userInterfaceMessage("Calibration", "Enregistrer?", "Save?", " Oui/Yes \n Non/No ") == 1) saveToEEPROM(0, (int)rNominal * 100);
+          else rNominal = (float)EEPROM.read(1) + ((float)EEPROM.read(2) / 100);
         }
         if (tmode < ALARM_MODE) tmode++;
         else tmode = 0;
@@ -392,11 +405,17 @@ void loop(void) {
         break;
       }
       else if (event == U8X8_MSG_GPIO_MENU_HOME) {
-        if (alarmTemp != 0) {
+        if (alarmState != 0) {
           u8g2.setFont(DEF_FONT);
-          if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Desactiver?", "Deactivate?", " Oui/Yes \n Non/No ") == 1) alarmTemp = alarmState = 0;
+          if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Desactiver?", "Deactivate?", " Oui/Yes \n Non/No ") == 1) alarmState = 0;
         }
         else if (tmode == DEFAULT_MODE) tmode = CALIB_MODE;
+        else if (tmode != CALIB_MODE) {
+          char aTemp[4];
+          sprintf(aTemp, "%d℃ / %d℉", alarmTemp, (int)(alarmTemp * 1.8 + 32));
+          u8g2.setFont(DEF_FONT);
+          if ( u8g2.userInterfaceMessage("Alarme/Alarm", aTemp, "Activer/Activate?", " Oui/Yes \n Non/No ") == 1) alarmState = 1;
+        }
         break;
       }
     }
