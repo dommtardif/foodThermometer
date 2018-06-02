@@ -11,14 +11,16 @@ typedef struct {
 } descriptionType;
 
 //Operation mode
-#define DEFAULT_MODE 0
-#define CANDY_MODE 1
-#define BEEF_MODE 2
-#define PORC_MODE 3
-#define POULTRY_MODE 4
-#define ALARM_MODE 5
-#define CALIB_MODE 6
+#define DEFAULT_MODE 1
+#define CANDY_MODE 2
+#define BEEF_MODE 3
+#define PORC_MODE 4
+#define POULTRY_MODE 5
+#define ALARM_MODE 6
+#define CALIB_MODE 7
 
+//Exponential moving average smoothing for delta
+#define SMOOTHING_FACTOR 0.1
 
 const static descriptionType PROGMEM candyStages[11]  = {{"Confiserie-Candy making", -5000},
   {"Petit filet/Soft thread", 10500},
