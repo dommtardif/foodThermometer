@@ -6,7 +6,7 @@
 
 //Button 1 Previous - Button 3 Next : Changes the value on screen (alarm and calibration mode)
 //Button 2 Menu : Changes thermometer modes
-//Button 4 Cancel: On default mode without alarm, goes into calibration mode. In any mode, with an alarm, cancels the alarm
+//Button 4 Activate Alarm / Cancel: activate/deactivate alarm. Cancels selection screen and confirmation dialog
 //
 //Check and modify the screen and pins setup below and change according to your needs.
 //Works as is on Arduino Leonardo
@@ -22,11 +22,14 @@
 //Screen Setup - modify to needs 128x64 is assumed in display routines
 U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
 
+//MAX31865 reference resistor value
+#define RREF      431.0
+
 //PINS Setup
 ////Switch pins
+#define P_PREV 4
 #define P_MENU 5
 #define P_NEXT 6
-#define P_PREV 4
 #define P_CANCEL 7
 ////Speaker or piezo pin
 #define P_SPEAKER 8
@@ -39,8 +42,6 @@ U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
 
 Adafruit_MAX31865 max3 = Adafruit_MAX31865(P_CS, P_SDI, P_SDO, P_CLK);
 
-//MAX31865 reference values
-#define RREF      431.0
 float rNominal = 100.00; //Modifiable via calibration mode - saved to eeprom
 
 byte tmode = DEFAULT_MODE;
@@ -103,11 +104,11 @@ boolean checkForFaults() {
   }
   return false;
 }
-void printTimeUntil(int timeUntil){
-      u8g2.print((int)(timeUntil / 60));
-    u8g2.print(F("m"));
-    u8g2.print(timeUntil % 60);
-    u8g2.print(F("s avant/until"));
+void printTimeUntil(int timeUntil) {
+  u8g2.print((int)(timeUntil / 60));
+  u8g2.print(F("m"));
+  u8g2.print(timeUntil % 60);
+  u8g2.print(F("s avant/until"));
 }
 void printStage(int currentTemp, int currentDelta, byte pos) {
   const static descriptionType *stages;
@@ -167,7 +168,7 @@ void alarmMode(int currentTemp, int currentDelta, byte pos) {
     u8g2.setCursor(0, pos + SMLINE_HEIGHT);
     int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
     if (timeUntil != -1) {
-     printTimeUntil(timeUntil);
+      printTimeUntil(timeUntil);
       pos += SMLINE_HEIGHT;
     }
   }
@@ -302,57 +303,56 @@ void playAlarm() {
   beep(P_SPEAKER, note_F7, 100); //F
   beep(P_SPEAKER, note_C8, 100); //C
 }
-void alarmSwitch(){
+void alarmSwitch() {
   if (alarmState != 0) {
-          u8g2.setFont(DEF_FONT);
-          if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Desactiver?", "Deactivate?", " Oui/Yes \n Non/No ") == 1) alarmState = 0;
-        }
-        //else if (tmode == DEFAULT_MODE) tmode = CALIB_MODE;
-        else if (alarmState == 0) {
-          //Dirty hack to convert int to char because sprintf takes too much space...
-          char unite, dizaine, centaine, unitef, dizainef, centainef;
-          int alarmTempf = alarmTemp * 1.8 + 32;
-          unite = 48 + alarmTemp % 10;
-          dizaine = 48 + ((alarmTemp % 100 - alarmTemp % 10) / 10);
-          centaine = 48 + (alarmTemp / 100);
-          unitef = 48 + alarmTempf % 10;
-          dizainef = 48 + ((alarmTempf % 100 - alarmTempf % 10) / 10);
-          centainef = 48 + (alarmTempf / 100);
-          char temp[10];
-          int i = 0;
-          if (centaine == 48) {
-            if (dizaine != 48) {
-              temp[i++] = dizaine;
-            }
+    u8g2.setFont(DEF_FONT);
+    if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Desactiver?", "Deactivate?", " Oui/Yes \n Non/No ") == 1) alarmState = 0;
+  }
+  else if (alarmState == 0) {
+    //Dirty hack to convert int to char because sprintf takes too much space...
+    char unite, dizaine, centaine, unitef, dizainef, centainef;
+    int alarmTempf = alarmTemp * 1.8 + 32;
+    unite = 48 + alarmTemp % 10;
+    dizaine = 48 + ((alarmTemp % 100 - alarmTemp % 10) / 10);
+    centaine = 48 + (alarmTemp / 100);
+    unitef = 48 + alarmTempf % 10;
+    dizainef = 48 + ((alarmTempf % 100 - alarmTempf % 10) / 10);
+    centainef = 48 + (alarmTempf / 100);
+    char temp[10];
+    int i = 0;
+    if (centaine == 48) {
+      if (dizaine != 48) {
+        temp[i++] = dizaine;
+      }
 
-            temp[i++] = unite;
-          }
-          else {
-            temp[i++] = centaine;
-            temp[i++] = dizaine;
-            temp[i++] = unite;
-          }
-          temp[i++] = 'C';
-          temp[i++] = '/';
-          if (centainef == 48) {
-            if (dizainef != 48) {
-              temp[i++] = dizainef;
-            }
+      temp[i++] = unite;
+    }
+    else {
+      temp[i++] = centaine;
+      temp[i++] = dizaine;
+      temp[i++] = unite;
+    }
+    temp[i++] = 'C';
+    temp[i++] = '/';
+    if (centainef == 48) {
+      if (dizainef != 48) {
+        temp[i++] = dizainef;
+      }
 
-            temp[i++] = unitef;
-          }
-          else {
-            temp[i++] = centainef;
-            temp[i++] = dizainef;
-            temp[i++] = unitef;
-          }
-          temp[i++] = 'F';
-          temp[i] = '\0';
+      temp[i++] = unitef;
+    }
+    else {
+      temp[i++] = centainef;
+      temp[i++] = dizainef;
+      temp[i++] = unitef;
+    }
+    temp[i++] = 'F';
+    temp[i] = '\0';
 
 
-          u8g2.setFont(DEF_FONT);
-          if ( u8g2.userInterfaceMessage("Alarme/Alarm", temp, "Activer?/Activate?", " Oui/Yes \n Non/No ") == 1) alarmState = 1;
-        }
+    u8g2.setFont(DEF_FONT);
+    if ( u8g2.userInterfaceMessage("Alarme/Alarm", temp, "Activer?/Activate?", " Oui/Yes \n Non/No ") == 1) alarmState = 1;
+  }
 }
 void loop(void) {
   checkForFaults();
@@ -370,17 +370,13 @@ void loop(void) {
   u8g2.firstPage();
   do {
 
-    byte pos = LINE_HEIGHT + SMLINE_HEIGHT/2;
+    byte pos = LINE_HEIGHT + SMLINE_HEIGHT / 2;
     if (alarmState != 0) {
-      u8g2.setFont(SMALL_FONT);
+     // u8g2.setFont(SMALL_FONT);
 
-      u8g2.setCursor(127 - u8g2.getStrWidth("*123C/123F"), SMLINE_HEIGHT);
+      u8g2.setCursor(127 - u8g2.getStrWidth("A"), LINE_HEIGHT);
       //pos += SMLINE_HEIGHT;
-      u8g2.print(F("*"));
-      u8g2.print(alarmTemp);
-      u8g2.print(F("℃/"));
-      u8g2.print((int)(alarmTemp * 1.8 + 32.0));
-      u8g2.print(F("F"));
+     u8g2.print("◉");
 
 
     }
@@ -390,21 +386,21 @@ void loop(void) {
     pos += LINE_HEIGHT;
     u8g2.print((float)currentTemp / 100.0);
     u8g2.print(F("℃△"));
-    u8g2.setFont(SMALL_FONT);
+//    u8g2.setFont(SMALL_FONT);
 
     u8g2.print((float)currentDelta / 100.0);
-    u8g2.print(F("|"));
-    u8g2.print((float)emastd / 100);
+//    u8g2.print(F("|"));
+//    u8g2.print((float)emastd / 100);
     u8g2.setFont(DEF_FONT);
 
     u8g2.setCursor(0, pos);
     u8g2.print((float)currentTemp / 100.0 * 1.8 + 32.0);
     u8g2.print(F("℉△"));
-    u8g2.setFont(SMALL_FONT);
+//    u8g2.setFont(SMALL_FONT);
 
     u8g2.print((float)currentDelta / 100.0 * 1.8);
-    u8g2.print(F("|"));
-    u8g2.print((float)emastd / 100 * 1.8);
+//    u8g2.print(F("|"));
+//    u8g2.print((float)emastd / 100 * 1.8);
     u8g2.setFont(DEF_FONT);
     u8g2.drawHLine(0, pos + 1, 128);
     if (tmode >= CANDY_MODE && tmode <= POULTRY_MODE) printStage(currentTemp, currentDelta, pos + 1);
