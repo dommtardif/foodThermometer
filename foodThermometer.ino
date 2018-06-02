@@ -41,9 +41,7 @@ U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
 //END PINS setup
 
 Adafruit_MAX31865 max3 = Adafruit_MAX31865(P_CS, P_SDI, P_SDO, P_CLK);
-
 float rNominal = 100.00; //Modifiable via calibration mode - saved to eeprom
-
 byte tmode = DEFAULT_MODE;
 int alarmTemp = 0;
 byte alarmState = 0;
@@ -119,12 +117,14 @@ boolean checkForFaults() {
   }
   return false;
 }
+
 void printTimeUntil(int timeUntil) {
   u8g2.print((int)(timeUntil / 60));
   u8g2.print(F("m"));
   u8g2.print(timeUntil % 60);
   u8g2.print(F("s avant/until"));
 }
+
 void printStage(int currentTemp, int currentDelta, byte pos) {
   const static descriptionType *stages;
   byte stagesSize;
@@ -156,7 +156,8 @@ void printStage(int currentTemp, int currentDelta, byte pos) {
 
   memcpy_P (&currentStage, &stages [stage - 1], sizeof currentStage);
 
-  int timeUntil = ((currentDelta > 0 && stage <= (stagesSize - 1)) ? (int)((nextStage.temp - currentTemp) / currentDelta) : -1);
+  int timeUntil = ((currentDelta > 0 && stage <= (stagesSize - 1))
+                   ? (int)((nextStage.temp - currentTemp) / currentDelta) : -1);
 
   u8g2.setFont(SMALL_FONT);
   pos += SMLINE_HEIGHT;
@@ -177,8 +178,6 @@ void printStage(int currentTemp, int currentDelta, byte pos) {
   u8g2.print(nextStage.description);
 }
 
-
-
 void alarmMode(int currentTemp, int currentDelta, byte pos) {
   u8g2.setFont(SMALL_FONT);
   pos += SMLINE_HEIGHT;
@@ -186,7 +185,9 @@ void alarmMode(int currentTemp, int currentDelta, byte pos) {
     u8g2.setCursor(0, pos);
     pos += SMLINE_HEIGHT;
 
-    pos += SMLINE_HEIGHT;    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
+    pos += SMLINE_HEIGHT;
+    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp)
+                     ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
     if (timeUntil != -1) {
       printTimeUntil(timeUntil);
     }
@@ -232,7 +233,8 @@ void setAlarmTemp() {
   int subend = substart;
   int delaylength = 500;
   bool looping = false;
-  while ((digitalRead(P_PREV) == LOW || digitalRead(P_NEXT) == LOW || looping) && ((subend - substart) < 3000)) {
+  while ((digitalRead(P_PREV) == LOW || digitalRead(P_NEXT) == LOW || looping)
+         && ((subend - substart) < 3000)) {
     looping = true;
 
     // yield(); //FOR ESP8266 ONLY
@@ -273,7 +275,8 @@ void setAlarmTemp() {
       break;
     } else if (digitalRead(P_CANCEL) == LOW) {
       alarmState = 0;
-      if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Mise a zero?", "Reset to zero?", " Oui/Yes \n Non/No ") == 1) alarmTemp = 0;
+      if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Mise a zero?", "Reset to zero?", " Oui/Yes \n Non/No ") == 1)
+        alarmTemp = 0;
       break;
     }
 
@@ -287,7 +290,8 @@ void setAlarmTemp() {
 
 void checkAlarm(int currentTemp, int currentDelta) {
   if (alarmState != 0) {
-    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
+    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp)
+                     ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
     if (timeUntil != -1 && timeUntil < 120 && alarmState == 1) {
       playAlarm();
       alarmState = 2;
@@ -312,6 +316,7 @@ void beep (int speakerPin, float noteFrequency, long noteDuration)
     delayMicroseconds(microsecondsPerWave);
   }
 }
+
 void playAlarm() {
   beep(P_SPEAKER, note_A7, 100); //A
   beep(P_SPEAKER, note_G7, 100); //G
@@ -330,10 +335,12 @@ void playAlarm() {
   beep(P_SPEAKER, note_F7, 100); //F
   beep(P_SPEAKER, note_C8, 100); //C
 }
+
 void alarmSwitch() {
   if (alarmState != 0) {
     u8g2.setFont(DEF_FONT);
-    if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Desactiver?", "Deactivate?", " Oui/Yes \n Non/No ") == 1) alarmState = 0;
+    if ( u8g2.userInterfaceMessage("Alarme/Alarm", "Desactiver?", "Deactivate?", " Oui/Yes \n Non/No ") == 1)
+      alarmState = 0;
   }
   else if (alarmState == 0) {
     //Dirty hack to convert int to char because sprintf takes too much space...
@@ -347,39 +354,23 @@ void alarmSwitch() {
     centainef = 48 + (alarmTempf / 100);
     char temp[10];
     int i = 0;
-    if (centaine == 48) {
-      if (dizaine != 48) {
-        temp[i++] = dizaine;
-      }
-
-      temp[i++] = unite;
-    }
-    else {
-      temp[i++] = centaine;
-      temp[i++] = dizaine;
-      temp[i++] = unite;
-    }
+    if (centaine != 48)  temp[i++] = centaine;
+    if (dizaine != 48 || centaine != 48) temp[i++] = dizaine;
+    temp[i++] = unite;
     temp[i++] = 'C';
     temp[i++] = '/';
-    if (centainef == 48) {
-      if (dizainef != 48) {
-        temp[i++] = dizainef;
-      }
-
-      temp[i++] = unitef;
-    }
-    else {
-      temp[i++] = centainef;
-      temp[i++] = dizainef;
-      temp[i++] = unitef;
-    }
+    if (centainef != 48)  temp[i++] = centainef;
+    if (dizainef != 48 || centainef != 48) temp[i++] = dizainef;
+    temp[i++] = unitef;
     temp[i++] = 'F';
     temp[i] = '\0';
     //end of dirty hack
     u8g2.setFont(DEF_FONT);
-    if ( u8g2.userInterfaceMessage("Alarme/Alarm", temp, "Activer?/Activate?", " Oui/Yes \n Non/No ") == 1) alarmState = 1;
+    if ( u8g2.userInterfaceMessage("Alarme/Alarm", temp, "Activer?/Activate?", " Oui/Yes \n Non/No ") == 1)
+      alarmState = 1;
   }
 }
+
 void loop(void) {
   checkForFaults();
   static int prevTemp = (int) (max3.temperature(rNominal, RREF) * 100);
@@ -433,12 +424,14 @@ void loop(void) {
     if (event != 0) {
       if (event == U8X8_MSG_GPIO_MENU_SELECT) {
         if (tmode == CALIB_MODE) {
-          if ( u8g2.userInterfaceMessage("Calibration", "Enregistrer?", "Save?", " Oui/Yes \n Non/No ") == 1) saveToEEPROM(0, (int)rNominal * 100);
+          if ( u8g2.userInterfaceMessage("Calibration", "Enregistrer?", "Save?", " Oui/Yes \n Non/No ") == 1)
+            saveToEEPROM(0, (int)rNominal * 100);
           else rNominal = (float)EEPROM.read(1) + ((float)EEPROM.read(2) / 100);
         }
         u8g2.setFont(SMALL_FONT);
 
-        byte mode = u8g2.userInterfaceSelectionList("Mode", tmode, "Defaut/Default \n Confiserie/Candy \n Boeuf/Beef \n Porc \n Poulet/Poultry \n Alarme/Alarm \n Calibration");
+        byte mode = u8g2.userInterfaceSelectionList("Mode", tmode,
+                    "Defaut/Default \n Confiserie/Candy \n Boeuf/Beef \n Porc \n Poulet/Poultry \n Alarme/Alarm \n Calibration");
         if (mode != 0) tmode = mode;
         break;
       }
