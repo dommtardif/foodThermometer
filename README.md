@@ -10,12 +10,8 @@ Also includes an alarm with a 2 minute until temperature warning.
 # Usage
 - Button 1 Previous - Button 3 Next : Changes the value on screen (alarm and calibration mode)
 - Button 2 Menu : Changes thermometer modes
-- Button 4 Cancel: 
-  - If alarm disabled
-    - Default mode: goes into calibration mode. 
-    - Other modes: enable alarm
-  - If alarm enabled : Cancels the alarm
-  - While setting alarm temperature: Reset alarm temperature to 0
-
+- Button 4 Alarm/Cancel: 
+  - Enable/Disable alarm
+  - Cancels menus and dialog boxes
 Check and modify the screen and pins setup below and change according to your needs.\
 Works as is on Arduino Leonardo
