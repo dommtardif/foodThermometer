@@ -11,8 +11,8 @@
 //Check and modify the screen and pins setup below and change according to your needs.
 //Works as is on Arduino Leonardo
 
-#include <EEPROM.h>
 #include <Arduino.h>
+#include <EEPROM.h>
 #include <Adafruit_MAX31865.h>
 #include <U8g2lib.h>
 #include <Wire.h>
@@ -69,33 +69,48 @@ boolean checkForFaults() {
   if (fault) {
     u8g2.firstPage();
     do {
+      byte pos = SMLINE_HEIGHT;
       u8g2.setFont(SMALL_FONT);
-      u8g2.setCursor(0, SMLINE_HEIGHT);
+      u8g2.setCursor(0, pos);
+      pos += SMLINE_HEIGHT;
       u8g2.print(F("Erreur/Fault"));
-      u8g2.setCursor(0, 2 * SMLINE_HEIGHT);
-
+      u8g2.setCursor(0, pos);
+      pos += SMLINE_HEIGHT;
       u8g2.print(F("# 0x"));
       u8g2.print(fault, HEX);
-      u8g2.setCursor(0, 2 * SMLINE_HEIGHT);
+      u8g2.setCursor(0, pos);
+      pos += SMLINE_HEIGHT;
 
       if (fault & MAX31865_FAULT_HIGHTHRESH) {
         u8g2.print(F("RTD High Threshold"));
+        u8g2.setCursor(0, pos);
+        pos += SMLINE_HEIGHT;
 
       }
       if (fault & MAX31865_FAULT_LOWTHRESH) {
         u8g2.print(F("RTD Low Threshold"));
+        u8g2.setCursor(0, pos);
+        pos += SMLINE_HEIGHT;
       }
       if (fault & MAX31865_FAULT_REFINLOW) {
         u8g2.print(F("REFIN- > 0.85 x Bias"));
+        u8g2.setCursor(0, pos);
+        pos += SMLINE_HEIGHT;
       }
       if (fault & MAX31865_FAULT_REFINHIGH) {
         u8g2.print(F("REFIN- < 0.85 x Bias - FORCE- open"));
+        u8g2.setCursor(0, pos);
+        pos += SMLINE_HEIGHT;
       }
       if (fault & MAX31865_FAULT_RTDINLOW) {
         u8g2.print(F("RTDIN- < 0.85 x Bias - FORCE- open"));
+        u8g2.setCursor(0, pos);
+        pos += SMLINE_HEIGHT;
       }
       if (fault & MAX31865_FAULT_OVUV) {
         u8g2.print(F("Under/Over voltage"));
+        u8g2.setCursor(0, pos);
+        pos += SMLINE_HEIGHT;
       }
     } while ( u8g2.nextPage() );
     max3.clearFault();
@@ -144,19 +159,21 @@ void printStage(int currentTemp, int currentDelta, byte pos) {
   int timeUntil = ((currentDelta > 0 && stage <= (stagesSize - 1)) ? (int)((nextStage.temp - currentTemp) / currentDelta) : -1);
 
   u8g2.setFont(SMALL_FONT);
-  u8g2.setCursor(0, pos + SMLINE_HEIGHT);
+  pos += SMLINE_HEIGHT;
+  u8g2.setCursor(0, pos);
+  pos += SMLINE_HEIGHT;
+
   u8g2.print(currentStage.description);
 
   if (timeUntil != -1) {
-    u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
-    printTimeUntil(timeUntil);
+    u8g2.setCursor(0, pos);
     pos += SMLINE_HEIGHT;
+    printTimeUntil(timeUntil);
   }
-  u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
-
+  u8g2.setCursor(0, pos);
+  pos += SMLINE_HEIGHT;
   u8g2.print(F("Prochain stade/Next stage"));
-  u8g2.setCursor(0, pos + 3 * SMLINE_HEIGHT);
-
+  u8g2.setCursor(0, pos);
   u8g2.print(nextStage.description);
 }
 
@@ -164,31 +181,37 @@ void printStage(int currentTemp, int currentDelta, byte pos) {
 
 void alarmMode(int currentTemp, int currentDelta, byte pos) {
   u8g2.setFont(SMALL_FONT);
+  pos += SMLINE_HEIGHT;
   if (alarmState != 0) {
-    u8g2.setCursor(0, pos + SMLINE_HEIGHT);
-    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
+    u8g2.setCursor(0, pos);
+    pos += SMLINE_HEIGHT;
+
+    pos += SMLINE_HEIGHT;    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp) ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
     if (timeUntil != -1) {
       printTimeUntil(timeUntil);
-      pos += SMLINE_HEIGHT;
     }
   }
-  u8g2.setCursor(0, pos + SMLINE_HEIGHT);
+  u8g2.setCursor(0, pos);
+  pos += SMLINE_HEIGHT;
   u8g2.print(F("alarme/alarm:"));
   u8g2.print(alarmTemp);
   u8g2.print(F("℃ / "));
   u8g2.print((int)(alarmTemp * 1.8 + 32));
   u8g2.println(F("℉"));
-  u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
+  u8g2.setCursor(0, pos);
+  pos += SMLINE_HEIGHT;
   if (alarmState != 0) u8g2.print(F("Actif/Active"));
   else u8g2.print(F("Inactif/Inactive"));
 }
 
 void calibMode(byte pos) {
   u8g2.setFont(SMALL_FONT);
-  u8g2.setCursor(0, pos + SMLINE_HEIGHT);
+  pos += SMLINE_HEIGHT;
+  u8g2.setCursor(0, pos);
+  pos += SMLINE_HEIGHT;
   u8g2.print(F("Calibration"));
-  u8g2.setCursor(0, pos + 2 * SMLINE_HEIGHT);
-
+  u8g2.setCursor(0, pos);
+  pos += SMLINE_HEIGHT;
   u8g2.print(F("Res.nom.:"));
   u8g2.print(rNominal);
 }
@@ -216,20 +239,24 @@ void setAlarmTemp() {
     if (digitalRead(P_PREV) == HIGH && digitalRead(P_NEXT) == HIGH) loopcount = 1;
     u8g2.firstPage();
     do {
-
+      byte pos = LINE_HEIGHT;
       u8g2.setFont(DEF_FONT);
-      u8g2.setCursor(0, LINE_HEIGHT);
+      u8g2.setCursor(0, pos);
+      pos += LINE_HEIGHT;
       u8g2.print(F("Alarme a:"));
-      u8g2.setCursor(0, 2 * LINE_HEIGHT);
+      u8g2.setCursor(0, pos);
+      pos += LINE_HEIGHT;
 
       u8g2.print(F("Alarm at:"));
-      u8g2.setCursor(0, 3 * LINE_HEIGHT);
+      u8g2.setCursor(0, pos);
+      pos += LINE_HEIGHT;
 
       u8g2.print(alarmTemp);
       u8g2.print(F("℃ / "));
       u8g2.print((int)(alarmTemp * 1.8 + 32));
       u8g2.print(F("℉"));
-      u8g2.drawHLine(0, 3 * LINE_HEIGHT + 1, 128);
+      pos += 1;
+      u8g2.drawHLine(0, pos, 128);
 
     } while ( u8g2.nextPage() );
 
@@ -348,8 +375,7 @@ void alarmSwitch() {
     }
     temp[i++] = 'F';
     temp[i] = '\0';
-
-
+    //end of dirty hack
     u8g2.setFont(DEF_FONT);
     if ( u8g2.userInterfaceMessage("Alarme/Alarm", temp, "Activer?/Activate?", " Oui/Yes \n Non/No ") == 1) alarmState = 1;
   }
@@ -358,10 +384,10 @@ void loop(void) {
   checkForFaults();
   static int prevTemp = (int) (max3.temperature(rNominal, RREF) * 100);
   int currentTemp = (int)(max3.temperature(rNominal, RREF) * 100);
-
   static float currentDelta = 0;
   static float emastd = 0;
   float delta = (float)(currentTemp - prevTemp) - currentDelta;
+
   currentDelta = currentDelta + SMOOTHING_FACTOR * delta;
   emastd = sqrt((1 - SMOOTHING_FACTOR) * (emastd * emastd + SMOOTHING_FACTOR * delta * delta));
   prevTemp = currentTemp;
@@ -369,16 +395,10 @@ void loop(void) {
   //Show current temperature and mode-specific displays
   u8g2.firstPage();
   do {
-
-    byte pos = LINE_HEIGHT + SMLINE_HEIGHT / 2;
+    byte pos = LINE_HEIGHT;
     if (alarmState != 0) {
-     // u8g2.setFont(SMALL_FONT);
-
-      u8g2.setCursor(127 - u8g2.getStrWidth("A"), LINE_HEIGHT);
-      //pos += SMLINE_HEIGHT;
-     u8g2.print("◉");
-
-
+      u8g2.setCursor(127 - u8g2.getStrWidth("◉"), LINE_HEIGHT);
+      u8g2.print("◉");
     }
     u8g2.setFont(DEF_FONT);
 
@@ -386,26 +406,18 @@ void loop(void) {
     pos += LINE_HEIGHT;
     u8g2.print((float)currentTemp / 100.0);
     u8g2.print(F("℃△"));
-//    u8g2.setFont(SMALL_FONT);
-
     u8g2.print((float)currentDelta / 100.0);
-//    u8g2.print(F("|"));
-//    u8g2.print((float)emastd / 100);
-    u8g2.setFont(DEF_FONT);
 
     u8g2.setCursor(0, pos);
     u8g2.print((float)currentTemp / 100.0 * 1.8 + 32.0);
     u8g2.print(F("℉△"));
-//    u8g2.setFont(SMALL_FONT);
-
     u8g2.print((float)currentDelta / 100.0 * 1.8);
-//    u8g2.print(F("|"));
-//    u8g2.print((float)emastd / 100 * 1.8);
-    u8g2.setFont(DEF_FONT);
-    u8g2.drawHLine(0, pos + 1, 128);
-    if (tmode >= CANDY_MODE && tmode <= POULTRY_MODE) printStage(currentTemp, currentDelta, pos + 1);
-    else if (tmode == ALARM_MODE) alarmMode(currentTemp, currentDelta, pos + 1);
-    else if (tmode == CALIB_MODE) calibMode(pos + 1);
+    pos += 1;
+    u8g2.drawHLine(0, pos, 128);
+
+    if (tmode >= CANDY_MODE && tmode <= POULTRY_MODE) printStage(currentTemp, currentDelta, pos);
+    else if (tmode == ALARM_MODE) alarmMode(currentTemp, currentDelta, pos);
+    else if (tmode == CALIB_MODE) calibMode(pos);
   } while ( u8g2.nextPage() );
 
 
