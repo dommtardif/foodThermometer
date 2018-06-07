@@ -288,20 +288,6 @@ void setAlarmTemp() {
 
 }
 
-void checkAlarm(int currentTemp, int currentDelta) {
-  if (alarmState != 0) {
-    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp)
-                     ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
-    if (timeUntil != -1 && timeUntil < 120 && alarmState == 1) {
-      playAlarm();
-      alarmState = 2;
-    }
-    else if (alarmState == 2 && ((alarmTemp - 1) * 100) < currentTemp) {
-      playAlarm();
-    }
-  }
-}
-
 void beep (int speakerPin, float noteFrequency, long noteDuration)
 {
   int x;
@@ -336,6 +322,22 @@ void playAlarm() {
   beep(P_SPEAKER, note_C8, 100); //C
 }
 
+void checkAlarm(int currentTemp, int currentDelta) {
+  if (alarmState != 0) {
+    int timeUntil = ((currentDelta > 0 && (alarmTemp * 100) > currentTemp) || (currentDelta < 0 && (alarmTemp * 100) < currentTemp)
+                     ? (int)((alarmTemp * 100 - currentTemp) / currentDelta) : -1);
+    if (timeUntil != -1 && timeUntil < 120 && alarmState == 1) {
+      playAlarm();
+      alarmState = 2;
+    }
+    else if (alarmState == 2 && ((alarmTemp - 1) * 100) < currentTemp) {
+      playAlarm();
+    }
+  }
+}
+
+
+
 void alarmSwitch() {
   if (alarmState != 0) {
     u8g2.setFont(DEF_FONT);
@@ -346,22 +348,22 @@ void alarmSwitch() {
     //Dirty hack to convert int to char because sprintf takes too much space...
     char unite, dizaine, centaine, unitef, dizainef, centainef;
     int alarmTempf = alarmTemp * 1.8 + 32;
-    unite = 48 + alarmTemp % 10;
-    dizaine = 48 + ((alarmTemp % 100 - alarmTemp % 10) / 10);
-    centaine = 48 + (alarmTemp / 100);
-    unitef = 48 + alarmTempf % 10;
-    dizainef = 48 + ((alarmTempf % 100 - alarmTempf % 10) / 10);
-    centainef = 48 + (alarmTempf / 100);
+    unite = alarmTemp % 10;
+    dizaine = ((alarmTemp % 100 - alarmTemp % 10) / 10);
+    centaine = (alarmTemp / 100);
+    unitef = alarmTempf % 10;
+    dizainef = ((alarmTempf % 100 - alarmTempf % 10) / 10);
+    centainef = (alarmTempf / 100);
     char temp[10];
     int i = 0;
-    if (centaine != 48)  temp[i++] = centaine;
-    if (dizaine != 48 || centaine != 48) temp[i++] = dizaine;
-    temp[i++] = unite;
+    if (centaine != 0)  temp[i++] = centaine + 48;
+    if (dizaine != 0 || centaine != 0) temp[i++] = dizaine + 48;
+    temp[i++] = unite + 48;
     temp[i++] = 'C';
     temp[i++] = '/';
-    if (centainef != 48)  temp[i++] = centainef;
-    if (dizainef != 48 || centainef != 48) temp[i++] = dizainef;
-    temp[i++] = unitef;
+    if (centainef != 0)  temp[i++] = centainef + 48;
+    if (dizainef != 0 || centainef != 0) temp[i++] = dizainef + 48;
+    temp[i++] = unitef + 48;
     temp[i++] = 'F';
     temp[i] = '\0';
     //end of dirty hack

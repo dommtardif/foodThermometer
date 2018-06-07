@@ -1,5 +1,7 @@
 // Reference:  This list was adapted from the table located here:
 //     http://www.phy.mtu.edu/~suits/notefreqs.html
+#ifndef NOTES
+#define NOTES
 #define  note_C0   16.35     //C0
 #define  note_Db0   17.32     //C#0/Db0
 #define  note_D0   18.35     //D0
@@ -100,4 +102,4 @@
 #define  note_Db8   4434.92     //C#8/Db8
 #define  note_D8   4698.64     //D8
 #define  note_Eb8   4978.03     //D#8/Eb8
-
+#endif

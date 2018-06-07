@@ -1,3 +1,5 @@
+#ifndef DEF
+#define DEF
 //Fonts
 #define DEF_FONT u8g2_font_7x13_t_symbols
 #define SMALL_FONT u8g2_font_profont10_tr
@@ -54,3 +56,4 @@ const static descriptionType PROGMEM poultryStages[5]  = {{"Volaille-Poultry", -
   {"Canard/Duck", 9000},
   {"", 30000}
 };
+#endif
