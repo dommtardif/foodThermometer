@@ -13,5 +13,5 @@ Also includes an alarm with a 2 minute until temperature warning.
 - Button 4 Alarm/Cancel: 
   - Enable/Disable alarm
   - Cancels menus and dialog boxes
-Check and modify the screen and pins setup below and change according to your needs.\
+
 Works as is on Arduino Leonardo
